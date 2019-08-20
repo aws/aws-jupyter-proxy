@@ -17,6 +17,10 @@ setuptools.setup(
         'notebook >=6.0, <7.0',
         'botocore >=1.0, <2.0'
     ],
+    extras_requires={
+        "dev": ["pytest"]
+    },
+    python_requires='>=3.6',
     data_files=[
         ('etc/jupyter/jupyter_notebook_config.d', ['aws_jupyter_proxy/etc/aws_jupyter_proxy.json']),
     ],
