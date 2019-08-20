@@ -1,24 +1,11 @@
-from boto3 import Session
-from notebook.base.handlers import APIHandler
+from botocore.session import Session
 from notebook.utils import url_path_join
 
-
-class AwsProxyHandler(APIHandler):
-
-    def initialize(self, session: Session):
-        """
-        Hook for Tornado handler initialization.
-        :param session: the botocore session
-        """
-        self.session = session
-
-    def get(self, *args):
-        self.log.info('GET invoked')
-
+from aws_jupyter_proxy.awsproxy import create_endpoint_resolver, AwsProxyHandler
 
 awsproxy_handlers = [(r'/awsproxy(.*)',
                       AwsProxyHandler,
-                      dict(session=Session()))]
+                      dict(endpoint_resolver=create_endpoint_resolver(), session=Session()))]
 
 
 def setup_handlers(web_app):
