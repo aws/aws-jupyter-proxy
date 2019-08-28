@@ -72,7 +72,7 @@ class AwsProxyHandler(APIHandler):
             if self._is_blacklisted_response_header(name, value):
                 continue
             self.set_header(name, value)
-        super(APIHandler, self).finish(response.body)
+        super(APIHandler, self).finish(response.body or None)
 
     async def post(self, *args):
         await self.handle_request()
@@ -87,6 +87,9 @@ class AwsProxyHandler(APIHandler):
         await self.handle_request()
 
     async def put(self, *args):
+        await self.handle_request()
+
+    async def head(self, *args):
         await self.handle_request()
 
     @staticmethod
@@ -125,7 +128,10 @@ class AwsProxyRequest(object):
     async def execute_downstream(self) -> HTTPResponse:
         """
         Executes the downstream request (Jupyter to AWS service) and return the response or the error
-        after adding SigV4 authentication
+        after adding SigV4 authentication.
+
+        "allow_nonstandard_methods" is used because Tornado rejects POST requests without a body without this parameter,
+        and some operations send such requests (such as S3.InitiateMultipartUpload)
         :return: the HTTPResponse
         """
         downstream_request_path = self.upstream_request.path[len('/awsproxy'):] or '/'
@@ -134,7 +140,8 @@ class AwsProxyRequest(object):
             url=self._compute_downstream_url(downstream_request_path),
             headers=self._compute_downstream_headers(downstream_request_path),
             body=self.upstream_request.body or None,
-            follow_redirects=False
+            follow_redirects=False,
+            allow_nonstandard_methods=True
         ))
 
     def _compute_downstream_url(self, downstream_request_path) -> str:
@@ -223,7 +230,17 @@ class AwsProxyRequest(object):
         canonical_query_string = ''
         corrected_request_query = self.upstream_request.query.replace('+', '%20')
         if corrected_request_query != '':
-            query_string_dict = dict(item.split('=', 1) for item in corrected_request_query.split('&'))
+            query_string_list = []
+            for item in corrected_request_query.split('&'):
+                query_string_part = item.split('=', maxsplit=1)
+                if len(query_string_part) == 2:
+                    query_string_list.append(query_string_part)
+                elif len(query_string_part) == 1:
+                    query_string_part.append('')
+                    query_string_list.append(query_string_part)
+                else:
+                    raise ValueError(f'Invalid query string split for {item}')
+            query_string_dict = dict(query_string_list)
             sorted_q_string_list = [f'{k}={query_string_dict[k]}' for k in sorted(query_string_dict)]
             canonical_query_string = '&'.join(sorted_q_string_list)
         return canonical_query_string
