@@ -2,7 +2,7 @@ from io import BytesIO
 
 import tornado.web
 from asynctest import CoroutineMock
-from mock import patch
+from unittest.mock import patch
 from tornado.httpclient import HTTPClientError, HTTPResponse, HTTPRequest
 from tornado.httputil import HTTPHeaders
 from tornado.testing import AsyncHTTPTestCase

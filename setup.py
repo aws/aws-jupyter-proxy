@@ -17,8 +17,14 @@ setuptools.setup(
         'notebook >=6.0, <7.0',
         'botocore >=1.0, <2.0'
     ],
-    extras_requires={
-        "dev": ["pytest"]
+    extras_require={
+        "dev": [
+            "asynctest",
+            "black",
+            "pytest", 
+            "pytest-asyncio",
+            "pytest-cov"
+            ]
     },
     python_requires='>=3.6',
     data_files=[
