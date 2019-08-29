@@ -35,8 +35,8 @@ Using this requries no additional dependencies in the client-side code. Just use
 
     // These credentials are *not* used for the actual AWS service call but you have
     // to provide any dummy credentials (Not real ones!)
-    AWS.config.secretAccessKey = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
-    AWS.config.accessKeyId = 'AKIDEXAMPLE';
+    AWS.config.secretAccessKey = 'IGNOREDIGNORE/IGNOREDIGNOREDIGNOREDIGNOR';
+    AWS.config.accessKeyId = 'IGNOREDIGNO';
 
     // Change the endpoint in the client to the "awsproxy" endpoint on the Jupyter server.
     const proxyEndpoint = 'http://localhost:8888/awsproxy';
