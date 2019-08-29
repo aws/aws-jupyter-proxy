@@ -4,7 +4,7 @@ A Jupyter server extension to proxy requests with AWS SigV4 authentication.
 
 ## Overview
 
-This server extension enables the usage of the [AWS JavaScript/TypeScript SDK](https://github.com/aws/aws-sdk-js)  without having to export AWS credentials to the browser.
+This server extension enables the usage of the [AWS JavaScript/TypeScript SDK](https://github.com/aws/aws-sdk-js) without having to export AWS credentials to the browser.
 
 A single `/awsproxy` endpoint is added on the Jupyter server which receives incoming requests from the browser, uses the credentials on the server to add [SigV4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) authentication to the request, and then proxies the request to the actual AWS service endpoint.
 
@@ -30,7 +30,8 @@ Using this requries no additional dependencies in the client-side code. Just use
     import S3 from 'aws-sdk/clients/s3';
 
 
-    // Configure any fake credentials
+    // These credentials are *not* used for the actual AWS service call but you have
+    // to provide any dummy credentials (Not real ones)
     AWS.config.secretAccessKey = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
     AWS.config.accessKeyId = 'AKIDEXAMPLE';
 
@@ -48,8 +49,13 @@ Using this requries no additional dependencies in the client-side code. Just use
             NameContains: 'jaipreet'
         })
         .promise();
+```
 
-    // For S3, enable the "s3ForcePathStyle" flag in the client.
+### Usage with S3
+
+For S3, use the `s3ForcePathStyle` parameter during the client initialization
+
+```typescript
     const s3Client = new S3({
         region: 'us-west-2',
         endpoint: proxyEndpoint,
