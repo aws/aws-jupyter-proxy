@@ -24,5 +24,6 @@ setuptools.setup(
     data_files=[
         ('etc/jupyter/jupyter_notebook_config.d', ['aws_jupyter_proxy/etc/aws_jupyter_proxy.json']),
     ],
-    include_package_data=True
+    classifiers=["Development Status :: 4 - Beta"],
+    include_package_data=True,
 )
