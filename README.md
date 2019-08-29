@@ -4,7 +4,7 @@
 ![Version](https://img.shields.io/pypi/v/aws_jupyter_proxy.svg)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-A Jupyter server extension to proxy requests with AWS SigV4 authentication. 
+A Jupyter server extension to proxy requests with AWS SigV4 authentication.
 
 ## Overview
 
