@@ -1,5 +1,9 @@
 # AWS Jupyter Proxy
 
+![CodeBuild](https://codebuild.us-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiZGVqcG5MVEZZYkd2aFBBZnlSZ1R6d0s3U1JKR3pwOWR0UGJTdEp5bW9QWlVlMmdnTEJlenZUdVVkQjNzcVViMmlLQ1NGNS9yLzJEWkRpMzF5WUxnZTJVPSIsIml2UGFyYW1ldGVyU3BlYyI6Ikw5ck5kZk50ai9UU2pYanMiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+![Version](https://img.shields.io/pypi/v/aws_jupyter_proxy.svg)
+![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
+
 A Jupyter server extension to proxy requests with AWS SigV4 authentication. 
 
 ## Overview
@@ -27,11 +31,10 @@ Using this requries no additional dependencies in the client-side code. Just use
 ```typescript
     import * as AWS from 'aws-sdk';
     import SageMaker from 'aws-sdk/clients/sagemaker';
-    import S3 from 'aws-sdk/clients/s3';
 
 
     // These credentials are *not* used for the actual AWS service call but you have
-    // to provide any dummy credentials (Not real ones)
+    // to provide any dummy credentials (Not real ones!)
     AWS.config.secretAccessKey = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
     AWS.config.accessKeyId = 'AKIDEXAMPLE';
 
@@ -56,6 +59,8 @@ Using this requries no additional dependencies in the client-side code. Just use
 For S3, use the `s3ForcePathStyle` parameter during the client initialization
 
 ```typescript
+    import S3 from 'aws-sdk/clients/s3';
+
     const s3Client = new S3({
         region: 'us-west-2',
         endpoint: proxyEndpoint,
