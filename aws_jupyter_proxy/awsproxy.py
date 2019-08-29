@@ -11,28 +11,42 @@ from botocore.model import ServiceModel
 from botocore.regions import EndpointResolver
 from botocore.session import Session
 from notebook.base.handlers import APIHandler
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse, HTTPClientError
+from tornado.httpclient import (
+    AsyncHTTPClient,
+    HTTPRequest,
+    HTTPResponse,
+    HTTPClientError,
+)
 from tornado.httputil import HTTPServerRequest, HTTPHeaders
 
-ServiceInfo = namedtuple('ServiceInfo', ['service_name', 'host', 'endpoint_url', 'credential_scope'])
-UpstreamAuthInfo = namedtuple('UpstreamAuthInfo', ['service_name', 'region', 'signed_headers'])
+ServiceInfo = namedtuple(
+    "ServiceInfo", ["service_name", "host", "endpoint_url", "credential_scope"]
+)
+UpstreamAuthInfo = namedtuple(
+    "UpstreamAuthInfo", ["service_name", "region", "signed_headers"]
+)
 
 
 # maxsize is arbitrarily taken from https://docs.python.org/3/library/functools.html#functools.lru_cache
 @lru_cache(maxsize=128)
-def get_service_info(endpoint_resolver: EndpointResolver, service_name: str, region: str) -> ServiceInfo:
-    service_model_json = create_loader().load_service_model(service_name, 'service-2')
+def get_service_info(
+    endpoint_resolver: EndpointResolver, service_name: str, region: str
+) -> ServiceInfo:
+    service_model_json = create_loader().load_service_model(service_name, "service-2")
 
     service_data = ClientEndpointBridge(endpoint_resolver).resolve(
-        service_name=ServiceModel(service_model_json,
-                                  service_name=service_name).endpoint_prefix,
-        region_name=region)
+        service_name=ServiceModel(
+            service_model_json, service_name=service_name
+        ).endpoint_prefix,
+        region_name=region,
+    )
 
-    return ServiceInfo(service_name,
-                       service_data['metadata']['hostname'],
-                       service_data['endpoint_url'],
-                       service_data['metadata'].get('credentialScope')
-                       )
+    return ServiceInfo(
+        service_name,
+        service_data["metadata"]["hostname"],
+        service_data["endpoint_url"],
+        service_data["metadata"].get("credentialScope"),
+    )
 
 
 def create_endpoint_resolver() -> EndpointResolver:
@@ -45,7 +59,6 @@ def create_endpoint_resolver() -> EndpointResolver:
 
 
 class AwsProxyHandler(APIHandler):
-
     def initialize(self, endpoint_resolver: EndpointResolver, session: Session):
         """
         Hook for Tornado handler initialization.
@@ -57,7 +70,9 @@ class AwsProxyHandler(APIHandler):
 
     async def handle_request(self):
         try:
-            response = await AwsProxyRequest(self.request, self.endpoint_resolver, self.session).execute_downstream()
+            response = await AwsProxyRequest(
+                self.request, self.endpoint_resolver, self.session
+            ).execute_downstream()
             self.set_status(response.code, response.reason)
             self._finish_response(response)
         except HTTPClientError as e:
@@ -94,11 +109,11 @@ class AwsProxyHandler(APIHandler):
 
     @staticmethod
     def _is_blacklisted_response_header(name: str, value: str) -> bool:
-        if name == 'Transfer-Encoding' and value == 'chunked':
+        if name == "Transfer-Encoding" and value == "chunked":
             # Responses are no longer "chunked" when we send them to the browser.
             # If we retain this header, then the browser will wait forever for more chunks.
             return True
-        elif name == 'Content-Length':
+        elif name == "Content-Length":
             # Tornado will auto-set the Content-Length
             return True
         else:
@@ -109,9 +124,15 @@ class AwsProxyRequest(object):
     """
     A class representing a request being proxied from an upstream client (browser) to the downstream AWS service.
     """
-    BLACKLISTED_REQUEST_HEADERS: List[str] = ['Origin', 'Host']
 
-    def __init__(self, upstream_request: HTTPServerRequest, endpoint_resolver: EndpointResolver, session: Session):
+    BLACKLISTED_REQUEST_HEADERS: List[str] = ["Origin", "Host"]
+
+    def __init__(
+        self,
+        upstream_request: HTTPServerRequest,
+        endpoint_resolver: EndpointResolver,
+        session: Session,
+    ):
         """
         :param upstream_request: The original upstream HTTP request from the client(browser) to Jupyter
         :param endpoint_resolver: The botocore endpoint_resolver instance
@@ -122,8 +143,11 @@ class AwsProxyRequest(object):
         self.credentials = session.get_credentials()
 
         self.upstream_auth_info = self._build_upstream_auth_info()
-        self.service_info = get_service_info(endpoint_resolver, self.upstream_auth_info.service_name,
-                                             self.upstream_auth_info.region)
+        self.service_info = get_service_info(
+            endpoint_resolver,
+            self.upstream_auth_info.service_name,
+            self.upstream_auth_info.region,
+        )
 
     async def execute_downstream(self) -> HTTPResponse:
         """
@@ -134,26 +158,30 @@ class AwsProxyRequest(object):
         and some operations send such requests (such as S3.InitiateMultipartUpload)
         :return: the HTTPResponse
         """
-        downstream_request_path = self.upstream_request.path[len('/awsproxy'):] or '/'
-        return await AsyncHTTPClient().fetch(HTTPRequest(
-            method=self.upstream_request.method,
-            url=self._compute_downstream_url(downstream_request_path),
-            headers=self._compute_downstream_headers(downstream_request_path),
-            body=self.upstream_request.body or None,
-            follow_redirects=False,
-            allow_nonstandard_methods=True
-        ))
+        downstream_request_path = self.upstream_request.path[len("/awsproxy") :] or "/"
+        return await AsyncHTTPClient().fetch(
+            HTTPRequest(
+                method=self.upstream_request.method,
+                url=self._compute_downstream_url(downstream_request_path),
+                headers=self._compute_downstream_headers(downstream_request_path),
+                body=self.upstream_request.body or None,
+                follow_redirects=False,
+                allow_nonstandard_methods=True,
+            )
+        )
 
     def _compute_downstream_url(self, downstream_request_path) -> str:
         base_service_url = urlparse(self.service_info.endpoint_url)
-        return urlunparse([
-            base_service_url.scheme,
-            base_service_url.netloc,
-            downstream_request_path,
-            base_service_url.params,
-            self.upstream_request.query,
-            None
-        ])
+        return urlunparse(
+            [
+                base_service_url.scheme,
+                base_service_url.netloc,
+                downstream_request_path,
+                base_service_url.params,
+                self.upstream_request.query,
+                None,
+            ]
+        )
 
     def _compute_downstream_headers(self, downstream_request_path) -> HTTPHeaders:
         """
@@ -172,12 +200,14 @@ class AwsProxyRequest(object):
             except KeyError:
                 pass
 
-        downstream_request_headers['Host'] = self.service_info.host
+        downstream_request_headers["Host"] = self.service_info.host
 
         if self.credentials.token:
-            downstream_request_headers['X-Amz-Security-Token'] = self.credentials.token
+            downstream_request_headers["X-Amz-Security-Token"] = self.credentials.token
 
-        downstream_request_headers['Authorization'] = self._sigv4_auth_header(downstream_request_path)
+        downstream_request_headers["Authorization"] = self._sigv4_auth_header(
+            downstream_request_path
+        )
         return downstream_request_headers
 
     def _sigv4_auth_header(self, downstream_request_path) -> str:
@@ -194,75 +224,91 @@ class AwsProxyRequest(object):
         signed_headers, canonical_headers = self._get_signed_canonical_headers()
         payload_hash = hashlib.sha256(self.upstream_request.body).hexdigest()
 
-        canonical_request = f'{canonical_method}\n' \
-                            f'{canonical_uri}\n' \
-                            f'{canonical_querystring}\n' \
-                            f'{canonical_headers}\n' \
-                            f'{signed_headers}\n' \
-                            f'{payload_hash}'
+        canonical_request = (
+            f"{canonical_method}\n"
+            f"{canonical_uri}\n"
+            f"{canonical_querystring}\n"
+            f"{canonical_headers}\n"
+            f"{signed_headers}\n"
+            f"{payload_hash}"
+        )
 
         # ************* TASK 2: CREATE THE STRING TO SIGN*************
-        algorithm = 'AWS4-HMAC-SHA256'
+        algorithm = "AWS4-HMAC-SHA256"
         region = self._get_downstream_signing_region()
-        amz_date = self.upstream_request.headers['X-Amz-Date']
+        amz_date = self.upstream_request.headers["X-Amz-Date"]
         date_stamp = amz_date[0:8]
 
-        credential_scope = f'{date_stamp}/{region}/{self.service_info.service_name}/aws4_request'
-        request_digest = hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()
-        string_to_sign = f'{algorithm}\n' \
-                         f'{amz_date}\n' \
-                         f'{credential_scope}\n' \
-                         f'{request_digest}'
+        credential_scope = (
+            f"{date_stamp}/{region}/{self.service_info.service_name}/aws4_request"
+        )
+        request_digest = hashlib.sha256(canonical_request.encode("utf-8")).hexdigest()
+        string_to_sign = (
+            f"{algorithm}\n" f"{amz_date}\n" f"{credential_scope}\n" f"{request_digest}"
+        )
 
         # ************* TASK 3: CALCULATE THE SIGNATURE *************
-        signing_key = get_signature_key(self.credentials.secret_key, date_stamp, region, self.service_info.service_name)
-        signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+        signing_key = get_signature_key(
+            self.credentials.secret_key,
+            date_stamp,
+            region,
+            self.service_info.service_name,
+        )
+        signature = hmac.new(
+            signing_key, string_to_sign.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
 
         # ************* TASK 4: BUILD THE AUTH HEADER *************
-        authorization_header = f'{algorithm} ' \
-                               f'Credential={self.credentials.access_key}/{credential_scope}, ' \
-                               f'SignedHeaders={signed_headers}, ' \
-                               f'Signature={signature}'
+        authorization_header = (
+            f"{algorithm} "
+            f"Credential={self.credentials.access_key}/{credential_scope}, "
+            f"SignedHeaders={signed_headers}, "
+            f"Signature={signature}"
+        )
 
         return authorization_header
 
     def _get_canonical_querystring(self) -> str:
-        canonical_query_string = ''
-        corrected_request_query = self.upstream_request.query.replace('+', '%20')
-        if corrected_request_query != '':
+        canonical_query_string = ""
+        corrected_request_query = self.upstream_request.query.replace("+", "%20")
+        if corrected_request_query != "":
             query_string_list = []
-            for item in corrected_request_query.split('&'):
-                query_string_part = item.split('=', maxsplit=1)
+            for item in corrected_request_query.split("&"):
+                query_string_part = item.split("=", maxsplit=1)
                 if len(query_string_part) == 2:
                     query_string_list.append(query_string_part)
                 elif len(query_string_part) == 1:
-                    query_string_part.append('')
+                    query_string_part.append("")
                     query_string_list.append(query_string_part)
                 else:
-                    raise ValueError(f'Invalid query string split for {item}')
+                    raise ValueError(f"Invalid query string split for {item}")
             query_string_dict = dict(query_string_list)
-            sorted_q_string_list = [f'{k}={query_string_dict[k]}' for k in sorted(query_string_dict)]
-            canonical_query_string = '&'.join(sorted_q_string_list)
+            sorted_q_string_list = [
+                f"{k}={query_string_dict[k]}" for k in sorted(query_string_dict)
+            ]
+            canonical_query_string = "&".join(sorted_q_string_list)
         return canonical_query_string
 
     def _get_signed_canonical_headers(self) -> Tuple[str, str]:
         canonical_headers = {}
 
         for signed_header in self.upstream_auth_info.signed_headers:
-            canonical_headers[signed_header] = self.upstream_request.headers[signed_header]
+            canonical_headers[signed_header] = self.upstream_request.headers[
+                signed_header
+            ]
 
-        canonical_headers['host'] = self.service_info.host
+        canonical_headers["host"] = self.service_info.host
         if self.credentials.token:
-            canonical_headers['x-amz-security-token'] = self.credentials.token
+            canonical_headers["x-amz-security-token"] = self.credentials.token
 
-        canonical_headers_string = '\n'.join(
+        canonical_headers_string = "\n".join(
             [
-                f'{canonical_header}:{canonical_headers[canonical_header]}'
+                f"{canonical_header}:{canonical_headers[canonical_header]}"
                 for canonical_header in sorted(canonical_headers)
             ]
         )
-        canonical_headers_string += '\n'
-        signed_headers = ';'.join(sorted(canonical_headers))
+        canonical_headers_string += "\n"
+        signed_headers = ";".join(sorted(canonical_headers))
 
         return signed_headers, canonical_headers_string
 
@@ -276,7 +322,7 @@ class AwsProxyRequest(object):
             return self.upstream_auth_info.region
 
         try:
-            return self.service_info.credential_scope['region']
+            return self.service_info.credential_scope["region"]
         except KeyError:
             return self.upstream_auth_info.region
 
@@ -293,10 +339,10 @@ class AwsProxyRequest(object):
 
         :return: the UpstreamAuthInfo instance
         """
-        auth_header_parts = self.upstream_request.headers['Authorization'].split(' ')
+        auth_header_parts = self.upstream_request.headers["Authorization"].split(" ")
 
-        signed_headers = auth_header_parts[2].strip(',').split('=')[1].split(';')
-        _, _, region, service_name, _ = auth_header_parts[1].split('=')[1].split('/')
+        signed_headers = auth_header_parts[2].strip(",").split("=")[1].split(";")
+        _, _, region, service_name, _ = auth_header_parts[1].split("=")[1].split("/")
         return UpstreamAuthInfo(service_name, region, signed_headers)
 
 
@@ -307,8 +353,8 @@ def sign(key, msg):
 
 
 def get_signature_key(key, date_stamp, region_name, service_name):
-    k_date = sign(('AWS4' + key).encode('utf-8'), date_stamp)
+    k_date = sign(("AWS4" + key).encode("utf-8"), date_stamp)
     k_region = sign(k_date, region_name)
     k_service = sign(k_region, service_name)
-    k_signing = sign(k_service, 'aws4_request')
+    k_signing = sign(k_service, "aws4_request")
     return k_signing
