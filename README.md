@@ -8,7 +8,7 @@ A Jupyter server extension to proxy requests with AWS SigV4 authentication.
 
 ## Overview
 
-This server extension enables the usage of the [AWS JavaScript/TypeScript SDK](https://github.com/aws/aws-sdk-js) without having to export AWS credentials to the browser.
+This server extension enables the usage of the [AWS JavaScript/TypeScript SDK](https://github.com/aws/aws-sdk-js) to write Jupyter frontend extensions without having to export AWS credentials to the browser.
 
 A single `/awsproxy` endpoint is added on the Jupyter server which receives incoming requests from the browser, uses the credentials on the server to add [SigV4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) authentication to the request, and then proxies the request to the actual AWS service endpoint.
 
