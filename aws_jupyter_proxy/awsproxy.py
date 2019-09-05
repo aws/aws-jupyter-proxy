@@ -150,7 +150,11 @@ class AwsProxyRequest(object):
             self.upstream_auth_info.service_name,
             self.upstream_auth_info.region,
         )
-        self.whitelisted_services = os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES")
+        self.whitelisted_services = (
+            os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES").strip(",").split(",")
+            if os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES") is not None
+            else None
+        )
 
     async def execute_downstream(self) -> HTTPResponse:
         """
@@ -161,10 +165,9 @@ class AwsProxyRequest(object):
         and some operations send such requests (such as S3.InitiateMultipartUpload)
         :return: the HTTPResponse
         """
-        if self.whitelisted_services is not None and self.service_info.service_name not in self.whitelisted_services.strip(
-            ","
-        ).split(
-            ","
+        if (
+            self.whitelisted_services is not None
+            and self.service_info.service_name not in self.whitelisted_services
         ):
             raise HTTPError(
                 403,
