@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 from collections import namedtuple
 from functools import lru_cache
 from typing import List, Tuple
@@ -16,6 +17,7 @@ from tornado.httpclient import (
     HTTPRequest,
     HTTPResponse,
     HTTPClientError,
+    HTTPError,
 )
 from tornado.httputil import HTTPServerRequest, HTTPHeaders
 
@@ -148,6 +150,12 @@ class AwsProxyRequest(object):
             self.upstream_auth_info.service_name,
             self.upstream_auth_info.region,
         )
+        # if the environment variable is not specified, os.getenv returns None, and no whitelist is in effect.
+        self.whitelisted_services = (
+            os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES").strip(",").split(",")
+            if os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES") is not None
+            else None
+        )
 
     async def execute_downstream(self) -> HTTPResponse:
         """
@@ -158,6 +166,15 @@ class AwsProxyRequest(object):
         and some operations send such requests (such as S3.InitiateMultipartUpload)
         :return: the HTTPResponse
         """
+        if (
+            self.whitelisted_services is not None
+            and self.service_info.service_name not in self.whitelisted_services
+        ):
+            raise HTTPError(
+                403,
+                message=f"Service {self.service_info.service_name} is not whitelisted for proxying requests",
+            )
+
         downstream_request_path = self.upstream_request.path[len("/awsproxy") :] or "/"
         return await AsyncHTTPClient().fetch(
             HTTPRequest(

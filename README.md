@@ -73,13 +73,23 @@ For S3, use the `s3ForcePathStyle` parameter during the client initialization
     }).promise();
 ```
 
+### Whitelisting
+
+On the server, the `AWS_JUPYTER_PROXY_WHITELISTED_SERVICES` environment variable can be used to whitelist the set of services allowed to be proxied through. This is opt-in - Not specifying this 
+environment variable will whitelist all services.
+
+```bash
+export AWS_JUPYTER_PROXY_WHITELISTED_SERVICES=sagemaker,s3
+jupyter-lab
+```
+
 ## Development
 
 Install all dev dependencies
 
 ```bash
 pip install -e ".[dev]"
-jupyter serverextension enable --py aws_jupyter_proxy
+jupyter serverextension enable --py aws_jupyter_proxy --sys-prefix
 ```
 
 Run unit tests using pytest
