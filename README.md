@@ -32,6 +32,14 @@ Using this requries no additional dependencies in the client-side code. Just use
     import * as AWS from 'aws-sdk';
     import SageMaker from 'aws-sdk/clients/sagemaker';
 
+    // Reusable function to add the XSRF token header to a request
+    function addXsrfToken<D, E>(request: AWS.Request<D, E>) {
+      const cookie = document.cookie.match('\\b' + '_xsrf' + '=([^;]*)\\b');
+      const xsrfToken = cookie ? cookie[1] : undefined;
+      if (xsrfToken !== undefined) {
+        request.httpRequest.headers['X-XSRFToken'] = xsrfToken;
+      }
+    }
 
     // These credentials are *not* used for the actual AWS service call but you have
     // to provide any dummy credentials (Not real ones!)
@@ -51,6 +59,7 @@ Using this requries no additional dependencies in the client-side code. Just use
         .listNotebookInstances({
             NameContains: 'jaipreet'
         })
+        .on('build', addXsrfToken)
         .promise();
 ```
 
@@ -67,10 +76,13 @@ For S3, use the `s3ForcePathStyle` parameter during the client initialization
         s3ForcePathStyle: true
     });
 
-    await s3Client.getObject({
-        Bucket: 'my-bucket',
-        Key: 'my-object'
-    }).promise();
+    await s3Client
+        .getObject({
+            Bucket: 'my-bucket',
+            Key: 'my-object'
+        })
+        .on('build', addXsrfToken)
+        .promise();
 ```
 
 ### Whitelisting
