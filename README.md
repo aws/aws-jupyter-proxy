@@ -32,16 +32,10 @@ Using this requries no additional dependencies in the client-side code. Just use
     import * as AWS from 'aws-sdk';
     import SageMaker from 'aws-sdk/clients/sagemaker';
 
-    // Generic function to get a cookie value, needed for accessing the XSRF token
-    function getCookie(name: string) {
-      // from tornado docs: http://www.tornadoweb.org/en/stable/guide/security.html
-      var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-      return r ? r[1] : undefined;
-    }
-
     // Reusable function to add the XSRF token header to a request
     function addXsrfToken<D, E>(request: AWS.Request<D, E>) {
-      const xsrfToken = getCookie('_xsrf');
+      const cookie = document.cookie.match('\\b' + '_xsrf' + '=([^;]*)\\b');
+      const xsrfToken = cookie ? cookie[1] : undefined;
       if (xsrfToken !== undefined) {
         request.httpRequest.headers['X-XSRFToken'] = xsrfToken;
       }
