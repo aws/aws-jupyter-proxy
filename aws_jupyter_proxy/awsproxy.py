@@ -175,7 +175,8 @@ class AwsProxyRequest(object):
                 message=f"Service {self.service_info.service_name} is not whitelisted for proxying requests",
             )
 
-        downstream_request_path = self.upstream_request.path[len("/awsproxy") :] or "/"
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        downstream_request_path = base_service_url.path + self.upstream_request.path[len("/awsproxy") :] or "/"
         return await AsyncHTTPClient().fetch(
             HTTPRequest(
                 method=self.upstream_request.method,
@@ -217,7 +218,9 @@ class AwsProxyRequest(object):
             except KeyError:
                 pass
 
-        downstream_request_headers["Host"] = self.service_info.host
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        downstream_request_headers["Host"] = base_service_url.netloc
+
 
         if self.credentials.token:
             downstream_request_headers["X-Amz-Security-Token"] = self.credentials.token
@@ -314,7 +317,8 @@ class AwsProxyRequest(object):
                 signed_header
             ]
 
-        canonical_headers["host"] = self.service_info.host
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        canonical_headers["host"] = base_service_url.netloc
         if self.credentials.token:
             canonical_headers["x-amz-security-token"] = self.credentials.token
 
