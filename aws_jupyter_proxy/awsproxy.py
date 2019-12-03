@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 from functools import lru_cache
 from typing import List, Tuple
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, quote
 
 from botocore.client import ClientEndpointBridge
 from botocore.loaders import create_loader
@@ -239,7 +239,7 @@ class AwsProxyRequest(object):
         """
         # ************* TASK 1: CREATE THE CANONICAL REQUEST*************
         canonical_method = self.upstream_request.method
-        canonical_uri = downstream_request_path
+        canonical_uri = quote(downstream_request_path)
         canonical_querystring = self._get_canonical_querystring()
         signed_headers, canonical_headers = self._get_signed_canonical_headers()
         payload_hash = hashlib.sha256(self.upstream_request.body).hexdigest()
