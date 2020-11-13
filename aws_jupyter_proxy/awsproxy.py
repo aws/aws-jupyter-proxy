@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 from functools import lru_cache
 from typing import List, Tuple
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, quote
 
 from botocore.client import ClientEndpointBridge
 from botocore.loaders import create_loader
@@ -175,7 +175,8 @@ class AwsProxyRequest(object):
                 message=f"Service {self.service_info.service_name} is not whitelisted for proxying requests",
             )
 
-        downstream_request_path = self.upstream_request.path[len("/awsproxy") :] or "/"
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        downstream_request_path = base_service_url.path + self.upstream_request.path[len("/awsproxy") :] or "/"
         return await AsyncHTTPClient().fetch(
             HTTPRequest(
                 method=self.upstream_request.method,
@@ -217,7 +218,9 @@ class AwsProxyRequest(object):
             except KeyError:
                 pass
 
-        downstream_request_headers["Host"] = self.service_info.host
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        downstream_request_headers["Host"] = base_service_url.netloc
+
 
         if self.credentials.token:
             downstream_request_headers["X-Amz-Security-Token"] = self.credentials.token
@@ -236,7 +239,7 @@ class AwsProxyRequest(object):
         """
         # ************* TASK 1: CREATE THE CANONICAL REQUEST*************
         canonical_method = self.upstream_request.method
-        canonical_uri = downstream_request_path
+        canonical_uri = quote(downstream_request_path)
         canonical_querystring = self._get_canonical_querystring()
         signed_headers, canonical_headers = self._get_signed_canonical_headers()
         payload_hash = hashlib.sha256(self.upstream_request.body).hexdigest()
@@ -314,7 +317,8 @@ class AwsProxyRequest(object):
                 signed_header
             ]
 
-        canonical_headers["host"] = self.service_info.host
+        base_service_url = urlparse(self.service_info.endpoint_url)
+        canonical_headers["host"] = base_service_url.netloc
         if self.credentials.token:
             canonical_headers["x-amz-security-token"] = self.credentials.token
 

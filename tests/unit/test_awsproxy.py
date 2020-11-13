@@ -524,7 +524,7 @@ async def test_get_with_encoded_uri(mock_fetch, mock_session):
             "SignedHeaders=host;x-amz-content-sha256;x-amz-date;"
             "x-amz-security-token;x-amz-user-agent, "
             "Signature="
-            "01f3a5107b8c445de48ebb0d902fe18539b643e9136094923250ca2b12666fe8",
+            "4715991ba2461bfda29bda8a53747a13448c1303c2e03d8ee8a4992df08f5551",
             "X-Amz-User-Agent": upstream_request.headers["X-Amz-User-Agent"],
             "X-Amz-Content-Sha256": upstream_request.headers["X-Amz-Content-Sha256"],
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
