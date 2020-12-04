@@ -23,8 +23,6 @@ jobs:
         pip install ".[dev]"
     - name: test
       run: |
-        pip install pytest
-        pip install pytest-cov
         pytest tests/unit/ --cov=aws_juptyer_proxy
         black --check .
     - name: Install and build
