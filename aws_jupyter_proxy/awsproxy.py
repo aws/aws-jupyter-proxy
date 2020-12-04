@@ -176,7 +176,10 @@ class AwsProxyRequest(object):
             )
 
         base_service_url = urlparse(self.service_info.endpoint_url)
-        downstream_request_path = base_service_url.path + self.upstream_request.path[len("/awsproxy") :] or "/"
+        downstream_request_path = (
+            base_service_url.path + self.upstream_request.path[len("/awsproxy") :]
+            or "/"
+        )
         return await AsyncHTTPClient().fetch(
             HTTPRequest(
                 method=self.upstream_request.method,
@@ -220,7 +223,6 @@ class AwsProxyRequest(object):
 
         base_service_url = urlparse(self.service_info.endpoint_url)
         downstream_request_headers["Host"] = base_service_url.netloc
-
 
         if self.credentials.token:
             downstream_request_headers["X-Amz-Security-Token"] = self.credentials.token
