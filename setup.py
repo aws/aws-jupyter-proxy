@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="aws_jupyter_proxy",
-    version="0.1.0",
+    version="0.2.0",
     url="https://github.com/aws/aws-jupyter-proxy",
     author="Amazon Web Services",
     description="A Jupyter server extension to proxy requests with AWS SigV4 authentication",
