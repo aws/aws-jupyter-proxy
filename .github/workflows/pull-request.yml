@@ -1,0 +1,38 @@
+name: Build and test feature branch
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.X
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[dev]"
+    - name: test
+      run: |
+        pytest tests/unit/ --cov=aws_juptyer_proxy
+        black --check .
+    - name: Install and build
+      run: >-
+        python -m
+        pip install ".[dev]"
+        build
+        --user
+    - name: build binary and tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
