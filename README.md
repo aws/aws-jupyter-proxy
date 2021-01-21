@@ -1,6 +1,5 @@
 # AWS Jupyter Proxy
 
-![CodeBuild](https://codebuild.us-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiZGVqcG5MVEZZYkd2aFBBZnlSZ1R6d0s3U1JKR3pwOWR0UGJTdEp5bW9QWlVlMmdnTEJlenZUdVVkQjNzcVViMmlLQ1NGNS9yLzJEWkRpMzF5WUxnZTJVPSIsIml2UGFyYW1ldGVyU3BlYyI6Ikw5ck5kZk50ai9UU2pYanMiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 [![Version](https://img.shields.io/pypi/v/aws_jupyter_proxy.svg)](https://pypi.org/project/aws-jupyter-proxy/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
