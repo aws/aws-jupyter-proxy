@@ -1,4 +1,4 @@
-name: Build and test feature branch
+name: pull-request-build
 
 on:
   pull_request:

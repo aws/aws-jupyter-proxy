@@ -1,7 +1,7 @@
 # Github actions that run tests on each commit, and publish to PyPi on tagged releases
 # build using https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
-name: Test and Release to PyPi
+name: build
 
 on:
   push
