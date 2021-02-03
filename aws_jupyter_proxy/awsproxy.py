@@ -176,9 +176,9 @@ class AwsProxyRequest(object):
             )
 
         base_service_url = urlparse(self.service_info.endpoint_url)
+        start_index = self.upstream_request.path.index("/awsproxy") + len("/awsproxy")
         downstream_request_path = (
-            base_service_url.path + self.upstream_request.path[len("/awsproxy") :]
-            or "/"
+            base_service_url.path + self.upstream_request.path[start_index:] or "/"
         )
         return await AsyncHTTPClient().fetch(
             HTTPRequest(
