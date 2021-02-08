@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import os
+import pkg_resources
 from collections import namedtuple
 from functools import lru_cache
 from typing import List, Tuple
@@ -27,6 +28,8 @@ ServiceInfo = namedtuple(
 UpstreamAuthInfo = namedtuple(
     "UpstreamAuthInfo", ["service_name", "region", "signed_headers"]
 )
+
+package_version = pkg_resources.require("aws_jupyter_proxy")[0].version
 
 
 # maxsize is arbitrarily taken from https://docs.python.org/3/library/functools.html#functools.lru_cache
@@ -223,6 +226,18 @@ class AwsProxyRequest(object):
 
         base_service_url = urlparse(self.service_info.endpoint_url)
         downstream_request_headers["Host"] = base_service_url.netloc
+
+        user_agent_product = "aws-jupyter-proxy"
+        user_agent_version = package_version
+        user_agent = user_agent_product + "/" + user_agent_version
+
+        upstream_user_agent = downstream_request_headers.get("User-Agent")
+        downstream_user_agent = (
+            user_agent
+            if upstream_user_agent is None
+            else upstream_user_agent + " " + user_agent
+        )
+        downstream_request_headers.update({"User-Agent": downstream_user_agent})
 
         if self.credentials.token:
             downstream_request_headers["X-Amz-Security-Token"] = self.credentials.token

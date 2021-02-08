@@ -1,4 +1,5 @@
 import pytest
+import pkg_resources
 from asynctest import Mock, patch, CoroutineMock
 from tornado.httpclient import HTTPRequest, HTTPClientError, HTTPError
 from tornado.httputil import HTTPServerRequest, HTTPHeaders
@@ -6,6 +7,8 @@ from tornado.httputil import HTTPServerRequest, HTTPHeaders
 from botocore.credentials import Credentials
 
 from aws_jupyter_proxy.awsproxy import AwsProxyRequest, create_endpoint_resolver
+
+version = pkg_resources.require("aws_jupyter_proxy")[0].version
 
 
 @pytest.fixture
@@ -64,6 +67,7 @@ async def test_post_with_body(mock_fetch, mock_session):
             "X-Amz-Date": "20190816T204930Z",
             "X-Amz-Security-Token": "session_token",
             "Host": "api.sagemaker.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -151,6 +155,7 @@ async def test_get_with_path(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "eks.us-east-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -204,6 +209,7 @@ async def test_get_with_query(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "eks.us-east-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -257,6 +263,7 @@ async def test_delete(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "eks.us-east-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -310,6 +317,7 @@ async def test_put(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "eks.us-east-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -370,6 +378,7 @@ async def test_post_with_query_params_and_body(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -424,6 +433,7 @@ async def test_post_with_query_params_no_body(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -477,6 +487,7 @@ async def test_head_request(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -530,6 +541,7 @@ async def test_get_with_encoded_uri(mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -655,6 +667,7 @@ async def test_request_whitelisted(mock_getenv, mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
@@ -670,7 +683,7 @@ async def test_request_with_base_url(mock_getenv, mock_fetch, mock_session):
     # Given
     upstream_request = HTTPServerRequest(
         method="HEAD",
-        uri="base-url/awsproxy/bucket-name-1",
+        uri="/base-url/awsproxy/bucket-name-1",
         headers=HTTPHeaders(
             {
                 "Authorization": "AWS4-HMAC-SHA256 "
@@ -710,6 +723,64 @@ async def test_request_with_base_url(mock_getenv, mock_fetch, mock_session):
             "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
             "X-Amz-Security-Token": "session_token",
             "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "aws-jupyter-proxy/" + version,
+        },
+        follow_redirects=False,
+        allow_nonstandard_methods=True,
+    )
+
+    assert_http_response(mock_fetch, expected)
+
+
+@pytest.mark.asyncio
+@patch("tornado.httpclient.AsyncHTTPClient.fetch", new_callable=CoroutineMock)
+@patch("os.getenv")
+async def test_request_with_user_agent(mock_getenv, mock_fetch, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="HEAD",
+        uri="/base-url/awsproxy/bucket-name-1",
+        headers=HTTPHeaders(
+            {
+                "Authorization": "AWS4-HMAC-SHA256 "
+                "Credential=AKIDEXAMPLE/20190828/us-west-2/s3/aws4_request, "
+                "SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-user-agent, "
+                "Signature=0d02795c4feed38e5a4cd80aec3a2c67886b11797a23c307e4f52c2cfe0c137e",
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "X-Amz-Date": "20190828T173626Z",
+                "User-Agent": "product/0.0.0",
+            }
+        ),
+        body=None,
+        host="localhost:8888",
+    )
+    mock_getenv.return_value = "s3,"
+
+    # When
+    await AwsProxyRequest(
+        upstream_request, create_endpoint_resolver(), mock_session
+    ).execute_downstream()
+
+    # Then
+    expected = HTTPRequest(
+        url="https://s3.us-west-2.amazonaws.com/bucket-name-1",
+        method=upstream_request.method,
+        body=None,
+        headers={
+            "Authorization": "AWS4-HMAC-SHA256 "
+            "Credential=access_key/20190828/us-west-2/s3/aws4_request, "
+            "SignedHeaders=host;x-amz-content-sha256;x-amz-date;"
+            "x-amz-security-token;x-amz-user-agent, "
+            "Signature="
+            "6d724e3bd64390d5d84010d6fc0f8147b3e3917c5befa3f8d1efb691b408e821",
+            "X-Amz-User-Agent": upstream_request.headers["X-Amz-User-Agent"],
+            "X-Amz-Content-Sha256": upstream_request.headers["X-Amz-Content-Sha256"],
+            "X-Amz-Date": upstream_request.headers["X-Amz-Date"],
+            "X-Amz-Security-Token": "session_token",
+            "Host": "s3.us-west-2.amazonaws.com",
+            "User-Agent": "product/0.0.0 aws-jupyter-proxy/" + version,
         },
         follow_redirects=False,
         allow_nonstandard_methods=True,
