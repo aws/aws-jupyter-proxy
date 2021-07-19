@@ -73,7 +73,8 @@ For S3, use the `s3ForcePathStyle` parameter during the client initialization
     const s3Client = new S3({
         region: 'us-west-2',
         endpoint: proxyEndpoint,
-        s3ForcePathStyle: true
+        s3ForcePathStyle: true,
+        s3DisableBodySigning:false // for https
     });
 
     await s3Client
