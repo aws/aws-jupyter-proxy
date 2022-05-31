@@ -32,7 +32,7 @@ UpstreamAuthInfo = namedtuple(
 # maxsize is arbitrarily taken from https://docs.python.org/3/library/functools.html#functools.lru_cache
 @lru_cache(maxsize=128)
 def get_service_info(
-    endpoint_resolver: EndpointResolver, service_name: str, region: str
+    endpoint_resolver: EndpointResolver, service_name: str, region: str, endpoint_override: str,
 ) -> ServiceInfo:
     service_model_json = create_loader().load_service_model(service_name, "service-2")
 
@@ -42,6 +42,9 @@ def get_service_info(
         ).endpoint_prefix,
         region_name=region,
     )
+
+    if endpoint_override:
+        service_data["endpoint_url"] = endpoint_override
 
     return ServiceInfo(
         service_name,
@@ -149,6 +152,7 @@ class AwsProxyRequest(object):
             endpoint_resolver,
             self.upstream_auth_info.service_name,
             self.upstream_auth_info.region,
+            self.upstream_request.headers.get('X-service-endpoint-url', None)
         )
         # if the environment variable is not specified, os.getenv returns None, and no whitelist is in effect.
         self.whitelisted_services = (
