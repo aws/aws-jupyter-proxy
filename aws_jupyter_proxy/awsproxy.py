@@ -150,6 +150,14 @@ class AwsProxyRequest(object):
             self.upstream_auth_info.service_name,
             self.upstream_auth_info.region,
         )
+
+        # overrides endpoint if specific header is passed
+        self.service_info._replace(
+            endpoint_url=upstream_request.headers.get(
+                "X-service-endpoint-url", self.service_info.endpoint_url
+            )
+        )
+
         # if the environment variable is not specified, os.getenv returns None, and no whitelist is in effect.
         self.whitelisted_services = (
             os.getenv("AWS_JUPYTER_PROXY_WHITELISTED_SERVICES").strip(",").split(",")
