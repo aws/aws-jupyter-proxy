@@ -15,7 +15,14 @@ setuptools.setup(
     license="Apache License 2.0",
     install_requires=["notebook >=6.0, <7.0", "botocore >=1.0, <2.0"],
     extras_require={
-        "dev": ["asynctest", "black", "pytest", "pytest-asyncio", "pytest-cov"]
+        "dev": [
+            "asynctest",
+            "black",
+            "pytest",
+            "pytest-asyncio",
+            "pytest-cov",
+            "validators",
+        ]
     },
     python_requires=">=3.6",
     data_files=[
