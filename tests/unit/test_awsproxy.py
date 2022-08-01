@@ -74,6 +74,63 @@ async def test_post_with_body(mock_fetch, mock_session):
 
 @pytest.mark.asyncio
 @patch("tornado.httpclient.AsyncHTTPClient.fetch", new_callable=CoroutineMock)
+async def test_endpoint_override(mock_fetch, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="POST",
+        uri="/awsproxy",
+        headers=HTTPHeaders(
+            {
+                "Authorization": "AWS4-HMAC-SHA256 "
+                "Credential=AKIDEXAMPLE/20190816/us-west-2/sagemaker/aws4_request, "
+                "SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-target;x-amz-user-agent, "
+                "Signature=cfe54b727d00698b9940531b1c9e456fd70258adc41fb338896455fddd6f3f2f",
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "a83a35dcbd19cfad5b714cb12b5275a4cfa7e1012b633d9206300f09e058e7fa",
+                "X-Amz-Target": "SageMaker.ListNotebookInstances",
+                "X-Amz-Date": "20190816T204930Z",
+                "X-service-endpoint-url": "https://axis.us-west-2.amazonaws.com",
+            }
+        ),
+        body=b'{"NameContains":"myname"}',
+        host="localhost:8888",
+    )
+
+    # When
+    await AwsProxyRequest(
+        upstream_request, create_endpoint_resolver(), mock_session
+    ).execute_downstream()
+
+    # Then
+    expected = HTTPRequest(
+        url="https://axis.us-west-2.amazonaws.com/",
+        method=upstream_request.method,
+        body=b'{"NameContains":"myname"}',
+        headers={
+            "Authorization": "AWS4-HMAC-SHA256 "
+            "Credential=access_key/20190816/us-west-2/sagemaker/aws4_request, "
+            "SignedHeaders=host;x-amz-content-sha256;x-amz-date;"
+            "x-amz-security-token;x-amz-target;x-amz-user-agent, "
+            "Signature="
+            "e21ff53bc657eaa68ee08193cccdeb82027692d45d6ea57a5c3364e7fc95954e",
+            "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+            "X-Amz-Content-Sha256": "a83a35dcbd19cfad5b714cb12b5275a4cfa7e1012b633d9206300f09e058e7fa",
+            "X-Amz-Target": "SageMaker.ListNotebookInstances",
+            "X-Amz-Date": "20190816T204930Z",
+            "X-Service-Endpoint-Url": "https://axis.us-west-2.amazonaws.com",
+            "Host": "axis.us-west-2.amazonaws.com",
+            "X-Amz-Security-Token": "session_token",
+        },
+        follow_redirects=False,
+        allow_nonstandard_methods=True,
+    )
+
+    assert_http_response(mock_fetch, expected)
+
+
+@pytest.mark.asyncio
+@patch("tornado.httpclient.AsyncHTTPClient.fetch", new_callable=CoroutineMock)
 async def test_errors_passed_through(mock_fetch, mock_session):
     # Given
     upstream_request = HTTPServerRequest(
