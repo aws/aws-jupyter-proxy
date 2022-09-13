@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import os
-import validators
 import re
 from collections import namedtuple
 from functools import lru_cache
@@ -48,10 +47,9 @@ def get_service_info(
         region_name=region,
     )
 
-    if (
-        endpoint_override
-        and validators.url(endpoint_override)
-        and re.compile(".*\.(aws.dev|amazonaws.com)$").match(endpoint_override)
+    if endpoint_override and re.fullmatch(
+        r"https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.(aws.dev|amazonaws.com)\b",
+        endpoint_override,
     ):
         service_data["endpoint_url"] = endpoint_override
 
