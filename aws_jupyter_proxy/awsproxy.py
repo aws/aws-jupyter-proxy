@@ -99,6 +99,10 @@ class AwsProxyHandler(APIHandler):
             if self._is_blacklisted_response_header(name, value):
                 continue
             self.set_header(name, value)
+        csp_value = response.headers.get(
+            "Content-Security-Policy", "upgrade-insecure-requests; base-uri 'none';"
+        )
+        self.set_header("Content-Security-Policy", csp_value)
         super(APIHandler, self).finish(response.body or None)
 
     async def post(self, *args):
