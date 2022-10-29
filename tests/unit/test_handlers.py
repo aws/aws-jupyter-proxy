@@ -108,7 +108,10 @@ class TestAwsProxyHandler(AsyncHTTPTestCase):
         assert b"SomeResponse" == response.body
         assert "Transfer-Encoding" not in response.headers
         assert "Content-Security-Policy" in response.headers
-        assert "default-src 'none';" == response.headers["Content-Security-Policy"]
+        assert (
+            "frame-ancestors 'self'; report-uri /jupyter/default/api/security/csp-report; default-src 'none'; upgrade-insecure-requests; base-uri 'none'"
+            == response.headers["Content-Security-Policy"]
+        )
         assert "foo-abc" == response.headers["X-Amz-RequestId"]
         assert "awsservice.amazonaws.com" == response.headers["Host"]
 
@@ -142,7 +145,7 @@ class TestAwsProxyHandler(AsyncHTTPTestCase):
         assert "Transfer-Encoding" not in response.headers
         assert "Content-Security-Policy" in response.headers
         assert (
-            "upgrade-insecure-requests; base-uri 'none';"
+            "frame-ancestors 'self'; report-uri /jupyter/default/api/security/csp-report; default-src 'none'; upgrade-insecure-requests; base-uri 'none'"
             == response.headers["Content-Security-Policy"]
         )
         assert "foo-abc" == response.headers["X-Amz-RequestId"]
