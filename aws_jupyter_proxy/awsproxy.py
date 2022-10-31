@@ -99,9 +99,7 @@ class AwsProxyHandler(APIHandler):
             if self._is_blacklisted_response_header(name, value):
                 continue
             self.set_header(name, value)
-        csp_value = response.headers.get(
-            "Content-Security-Policy", "upgrade-insecure-requests; base-uri 'none';"
-        )
+        csp_value = "frame-ancestors 'self'; report-uri /jupyter/default/api/security/csp-report; default-src 'none'; upgrade-insecure-requests; base-uri 'none'"
         self.set_header("Content-Security-Policy", csp_value)
         super(APIHandler, self).finish(response.body or None)
 
