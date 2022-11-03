@@ -328,9 +328,12 @@ class AwsProxyRequest(object):
         canonical_headers = {}
 
         for signed_header in self.upstream_auth_info.signed_headers:
-            canonical_headers[signed_header] = self.upstream_request.headers[
-                signed_header
-            ]
+            try:
+                canonical_headers[signed_header] = self.upstream_request.headers[
+                    signed_header
+                ]
+            except KeyError:
+                raise HTTPError(400, message=f"Bad Request")
 
         base_service_url = urlparse(self.service_info.endpoint_url)
         canonical_headers["host"] = base_service_url.netloc
