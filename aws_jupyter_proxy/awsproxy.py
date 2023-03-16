@@ -380,10 +380,14 @@ class AwsProxyRequest(object):
         """
 
         try:
-            auth_header_parts = self.upstream_request.headers["Authorization"].split(" ")
+            auth_header_parts = self.upstream_request.headers["Authorization"].split(
+                " "
+            )
 
             signed_headers = auth_header_parts[2].strip(",").split("=")[1].split(";")
-            _, _, region, service_name, _ = auth_header_parts[1].split("=")[1].split("/")
+            _, _, region, service_name, _ = (
+                auth_header_parts[1].split("=")[1].split("/")
+            )
         except (KeyError, IndexError):
             raise HTTPError(400, message=f"Bad Request")
 
