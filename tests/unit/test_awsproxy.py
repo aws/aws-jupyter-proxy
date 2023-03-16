@@ -889,6 +889,37 @@ async def test_request_with_base_url(mock_getenv, mock_fetch, mock_session):
     assert_http_response(mock_fetch, expected)
 
 
+@pytest.mark.asyncio
+@patch("os.getenv")
+async def test_missing_authorization_header(mock_getenv, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="HEAD",
+        uri="/awsproxy/bucket-name-1",
+        headers=HTTPHeaders(
+            {
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "X-Amz-Date": "20190828T173626Z",
+            }
+        ),
+        body=None,
+        host="localhost:8888",
+    )
+    mock_getenv.return_value = ""
+
+    # When
+    with pytest.raises(HTTPError) as e:
+        await AwsProxyRequest(
+            upstream_request, create_endpoint_resolver(), mock_session
+        ).execute_downstream()
+
+        # Then
+        assert 400 == e.value.code
+        assert "Bad Request" == e.value.message
+
+
 def assert_http_response(mock_fetch, expected_http_request):
     mock_fetch.assert_awaited_once()
     actual_http_request: HTTPRequest = mock_fetch.await_args[0][0]
