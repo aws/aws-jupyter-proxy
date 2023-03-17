@@ -917,7 +917,103 @@ async def test_missing_authorization_header(mock_getenv, mock_session):
 
         # Then
         assert 400 == e.value.code
-        assert "Bad Request" == e.value.message
+        assert "Missing Authorization header" == e.value.message
+
+
+@pytest.mark.asyncio
+@patch("os.getenv")
+async def test_missing_region_in_authorization_header(mock_getenv, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="HEAD",
+        uri="/awsproxy/bucket-name-1",
+        headers=HTTPHeaders(
+            {
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "X-Amz-Date": "20190828T173626Z",
+                "Authorization": "AWS4-HMAC-SHA256 Credential=IGNOREDIGNO/20230317/some-service/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-user-agent;x-service-endpoint-url;x-xsrftoken, Signature=123456789",
+            }
+        ),
+        body=None,
+        host="localhost:8888",
+    )
+    mock_getenv.return_value = ""
+
+    # When
+    with pytest.raises(HTTPError) as e:
+        await AwsProxyRequest(
+            upstream_request, create_endpoint_resolver(), mock_session
+        ).execute_downstream()
+
+        # Then
+        assert 400 == e.value.code
+        assert "Malformed Authorization header" == e.value.message
+
+
+@pytest.mark.asyncio
+@patch("os.getenv")
+async def test_missing_service_in_authorization_header(mock_getenv, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="HEAD",
+        uri="/awsproxy/bucket-name-1",
+        headers=HTTPHeaders(
+            {
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "X-Amz-Date": "20190828T173626Z",
+                "Authorization": "AWS4-HMAC-SHA256 Credential=IGNOREDIGNO/20230317/us-west-2/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-user-agent;x-service-endpoint-url;x-xsrftoken, Signature=123456789",
+            }
+        ),
+        body=None,
+        host="localhost:8888",
+    )
+    mock_getenv.return_value = ""
+
+    # When
+    with pytest.raises(HTTPError) as e:
+        await AwsProxyRequest(
+            upstream_request, create_endpoint_resolver(), mock_session
+        ).execute_downstream()
+
+        # Then
+        assert 400 == e.value.code
+        assert "Malformed Authorization header" == e.value.message
+
+
+@pytest.mark.asyncio
+@patch("os.getenv")
+async def test_malformed_authorization_header(mock_getenv, mock_session):
+    # Given
+    upstream_request = HTTPServerRequest(
+        method="HEAD",
+        uri="/awsproxy/bucket-name-1",
+        headers=HTTPHeaders(
+            {
+                "Host": "localhost:8888",
+                "X-Amz-User-Agent": "aws-sdk-js/2.507.0 promise",
+                "X-Amz-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "X-Amz-Date": "20190828T173626Z",
+                "Authorization": "AWS4-HMAC-SHA256 malformed-content",
+            }
+        ),
+        body=None,
+        host="localhost:8888",
+    )
+    mock_getenv.return_value = ""
+
+    # When
+    with pytest.raises(HTTPError) as e:
+        await AwsProxyRequest(
+            upstream_request, create_endpoint_resolver(), mock_session
+        ).execute_downstream()
+
+        # Then
+        assert 400 == e.value.code
+        assert "Malformed Authorization header" == e.value.message
 
 
 def assert_http_response(mock_fetch, expected_http_request):

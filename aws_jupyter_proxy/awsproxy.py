@@ -388,8 +388,10 @@ class AwsProxyRequest(object):
             _, _, region, service_name, _ = (
                 auth_header_parts[1].split("=")[1].split("/")
             )
-        except (KeyError, IndexError):
-            raise HTTPError(400, message=f"Bad Request")
+        except (KeyError):
+            raise HTTPError(400, message=f"Missing Authorization header")
+        except (IndexError, ValueError):
+            raise HTTPError(400, message=f"Malformed Authorization header")
 
         return UpstreamAuthInfo(service_name, region, signed_headers)
 
