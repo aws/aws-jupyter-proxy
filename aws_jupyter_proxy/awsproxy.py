@@ -378,10 +378,21 @@ class AwsProxyRequest(object):
 
         :return: the UpstreamAuthInfo instance
         """
-        auth_header_parts = self.upstream_request.headers["Authorization"].split(" ")
 
-        signed_headers = auth_header_parts[2].strip(",").split("=")[1].split(";")
-        _, _, region, service_name, _ = auth_header_parts[1].split("=")[1].split("/")
+        try:
+            auth_header_parts = self.upstream_request.headers["Authorization"].split(
+                " "
+            )
+
+            signed_headers = auth_header_parts[2].strip(",").split("=")[1].split(";")
+            _, _, region, service_name, _ = (
+                auth_header_parts[1].split("=")[1].split("/")
+            )
+        except KeyError:
+            raise HTTPError(400, message=f"Missing Authorization header")
+        except (IndexError, ValueError):
+            raise HTTPError(400, message=f"Malformed Authorization header")
+
         return UpstreamAuthInfo(service_name, region, signed_headers)
 
 
