@@ -48,7 +48,7 @@ def get_service_info(
     )
 
     if endpoint_override and re.fullmatch(
-        r"https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.(aws.dev|amazonaws.com)\b",
+        r"https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.(aws.dev|amazonaws.com|aws.a2z.com)\b",
         endpoint_override,
     ):
         service_data["endpoint_url"] = endpoint_override
